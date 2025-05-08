@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+import re
 from collections import defaultdict
 
 def categorize_product(name):
@@ -23,7 +24,8 @@ def categorize_product(name):
     
     return 'Другое'
 
-def excel_to_json(input_file, output_file):
+def excel_to_json(input_file):
+    """Конвертация Excel в JSON"""
     df = pd.read_excel(input_file)
     df = df[['Наименование', 'Описание']].dropna(subset=['Наименование'])
     
@@ -39,8 +41,29 @@ def excel_to_json(input_file, output_file):
             'Описание': description
         })
     
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+    return result
 
-# Запуск
-excel_to_json('leader_t.xls', 'leader_t_products.json')
+def remove_article(name):
+    """Удаление артикулов из названия"""
+    return re.sub(r'\s*\(арт.\d+\)', '', name)
+
+def clean_json(data):
+    """Очистка JSON от артикулов"""
+    for category, products in data.items():
+        for product in products:
+            if 'Наименование' in product:
+                product['Наименование'] = remove_article(product['Наименование'])
+    return data
+
+# Запуск конвертации и очистки
+input_excel = 'tables/leader_t.xls'
+output_json = 'json/leader_t_products_cleaned.json'
+
+data = excel_to_json(input_excel)  # Конвертация Excel в JSON
+cleaned_data = clean_json(data)  # Очистка данных
+
+# Сохранение финального JSON
+with open(output_json, 'w', encoding='utf-8') as file:
+    json.dump(cleaned_data, file, ensure_ascii=False, indent=2)
+
+print(f"Файл успешно обработан и сохранен: {output_json}")

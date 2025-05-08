@@ -1,65 +1,105 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Используем библиотеку xlsx для работы с Excel-файлами
-    const XLSX = require('xlsx');
-    filePath = 'positions.xlsx';
-    // Функция для загрузки и парсинга данных из Excel-файла
-    function loadExcelData(filePath) {
-        fetch(filePath)
-            .then(response => response.arrayBuffer())
-            .then(data => {
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetNames = workbook.SheetNames;
+document.addEventListener('DOMContentLoaded', async () => {
+    const catalog = document.getElementById('catalog');
 
-                // Создаем объект для хранения данных
-                const dataObj = {};
-
-                sheetNames.forEach(sheetName => {
-                    const worksheet = workbook.Sheets[sheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                    // Фильтруем пустые строки и собираем данные
-                    const positions = json
-                        .filter(row => row[0] !== undefined && row[0] !== '')
-                        .map(row => row[0]);
-
-                    dataObj[sheetName] = positions;
-                });
-
-                return dataObj;
-            })
-            .then(dataObj => {
-                // Заполнение выпадающего списка категориями
-                const categorySelect = document.getElementById('category-select');
-                const productPositions = document.getElementById('product-positions');
-
-                Object.keys(dataObj).forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category;
-                    option.textContent = category;
-                    categorySelect.appendChild(option);
-                });
-
-                // Обработчик изменения категории
-                categorySelect.addEventListener('change', function() {
-                    const selectedCategory = categorySelect.value;
-                    displayPositions(selectedCategory, dataObj);
-                });
-            })
-            .catch(error => console.error('Error loading the Excel file:', error));
+    // Функция для загрузки данных из API
+    async function fetchCatalog() {
+        const response = await fetch('http://127.0.0.1:5000/api/catalog');
+        if (!response.ok) {
+            console.error('Ошибка загрузки данных');
+            return {};
+        }
+        return await response.json();
     }
 
-    function displayPositions(category, dataObj) {
-        const productPositions = document.getElementById('product-positions');
-        productPositions.innerHTML = '';
+    // Функция для рендеринга списка категорий
+    function renderCategories(data) {
+        catalog.innerHTML = ''; // Очищаем каталог
+        const categoryList = document.createElement('ul'); // Создаем список категорий
 
-        const positions = dataObj[category];
-        positions.forEach(position => {
-            const listItem = document.createElement('li');
-            listItem.textContent = position;
-            productPositions.appendChild(listItem);
+        for (const category of Object.keys(data)) {
+            const categoryItem = document.createElement('li'); // Элемент списка
+            categoryItem.textContent = category;
+            categoryItem.style.cursor = 'pointer';
+            categoryItem.addEventListener('click', () => renderProducts(data, category)); // Переход к товарам категории
+
+            categoryList.appendChild(categoryItem);
+        }
+
+        catalog.appendChild(categoryList);
+    }
+
+    // Функция для рендеринга товаров в категории
+    function renderProducts(data, category) {
+        catalog.innerHTML = ''; // Очищаем каталог
+
+        const backButton = document.createElement('button');
+        backButton.textContent = 'Назад к категориям';
+        backButton.addEventListener('click', () => renderCategories(data)); // Возврат к списку категорий
+        catalog.appendChild(backButton);
+
+        const categoryTitle = document.createElement('h2');
+        categoryTitle.textContent = category;
+        catalog.appendChild(categoryTitle);
+
+        const productList = document.createElement('ul'); // Список товаров
+
+        data[category].forEach(product => {
+            const productItem = document.createElement('li'); // Элемент списка товаров
+            productItem.textContent = product.name;
+            productItem.style.cursor = 'pointer';
+            productItem.addEventListener('click', () => renderProductDetails(product)); // Переход к деталям товара
+
+            productList.appendChild(productItem);
         });
+
+        catalog.appendChild(productList);
     }
 
-    // Загрузка данных из файла positions.xlsx
-    loadExcelData('positions.xlsx');
+    // Функция для рендеринга деталей товара
+    function renderProductDetails(product) {
+        catalog.innerHTML = ''; // Очищаем каталог
+
+        const backButton = document.createElement('button');
+        backButton.textContent = 'Назад к товарам';
+        backButton.addEventListener('click', async () => {
+            const data = await fetchCatalog();
+            const category = Object.keys(data).find(cat =>
+                data[cat].some(p => p.name === product.name)
+            );
+            renderProducts(data, category);
+        });
+        catalog.appendChild(backButton);
+
+        const productTitle = document.createElement('h2');
+        productTitle.textContent = product.name;
+        catalog.appendChild(productTitle);
+
+        if (product.description) {
+            const productDescription = document.createElement('p');
+            productDescription.textContent = `Описание: ${product.description}`;
+            catalog.appendChild(productDescription);
+        }
+
+        if (product.material && product.material.length > 0) {
+            const productMaterial = document.createElement('p');
+            productMaterial.textContent = `Материалы: ${product.material}`;
+            catalog.appendChild(productMaterial);
+        }
+
+        if (product.diameters && product.diameters.length > 0) {
+            const productDiameters = document.createElement('p');
+            productDiameters.textContent = `Диаметры: ${product.diameters}`;
+            catalog.appendChild(productDiameters);
+        }
+
+        if (product.lengths && product.lengths.length > 0) {
+            const productLengths = document.createElement('p');
+            productLengths.textContent = `Длины: ${product.lengths}`;
+            catalog.appendChild(productLengths);
+        }
+    }
+
+    // Загружаем и рендерим категории
+    const data = await fetchCatalog();
+    renderCategories(data);
 });
