@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function fetchCatalog() {
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/catalog');
+            const response = await fetch('http://194.87.76.239:5001/api/catalog');
             if (!response.ok) throw new Error('Ошибка загрузки данных');
             return await response.json();
         } catch (error) {

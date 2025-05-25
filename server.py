@@ -1,10 +1,19 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 import sqlite3
-from collections import defaultdict
+#from collections import defaultdict
+import os
 
-app = Flask(__name__)
-CORS(app)  # Разрешаем CORS для всего приложения
+app = Flask(__name__, static_folder=".", static_url_path="")
+CORS(app)
+
+@app.route("/")
+def index():
+    return app.send_static_file("index.html")
+
+@app.route("/contacts.html")
+def contacts():
+    return app.send_static_file("contacts.html")
 
 def get_catalog():
     conn = sqlite3.connect("db/database.sqlite")
@@ -51,4 +60,4 @@ def api_catalog():
     return jsonify(get_catalog())
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
