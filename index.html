@@ -3,61 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Каталог товаров</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
-        header {
-            background-color: #333;
-            color: #fff;
-            padding: 10px 20px;
-            text-align: center;
-        }
-        main {
-            display: flex;
-            flex-wrap: wrap;
-            padding: 20px;
-            gap: 20px;
-        }
-        .category {
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        .category h2 {
-            margin: 0 0 10px;
-            color: #333;
-        }
-        .product-card {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 15px;
-            width: calc(33.333% - 20px);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .product-card h3 {
-            margin: 0 0 10px;
-            font-size: 18px;
-            color: #333;
-        }
-        .product-card p {
-            margin: 5px 0;
-            font-size: 14px;
-            color: #666;
-        }
-    </style>
+    <title>Intelsnab — Каталог</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Верхняя контактная панель -->
+    <div class="top-bar">
+        <div class="container">
+            <div class="contact-info">
+                <span><img src="img/phone-icon.png" alt="Телефон"> +7 (904) 914-42-68</span>
+                <span><img src="img/email-icon.png" alt="Email"> intelsnab52@bk.ru</span>
+                <span><img src="img/clock-icon.png" alt="Часы работы"> Пн-Сб: 9:00-18:00</span>
+            </div>
+        </div>
+    </div>
+
     <header>
-        <h1>Каталог товаров</h1>
+        <div class="container">
+            <div class="logo">
+                <img src="img/logo.jpg" alt="Intelsnab" id="header-logo">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html" class="active">Каталог</a></li>
+                    <li><a href="contacts.html">Контакты</a></li>
+                </ul>
+            </nav>
+        </div>
     </header>
-    <main id="catalog">
-        <!-- Категории и товары будут загружаться динамически -->
+
+    <main class="container">
+        <div id="catalog"></div>
     </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Intelsnab. Все права защищены.</p>
+        </div>
+    </footer>
+
     <script src="scripts.js"></script>
 </body>
 </html>

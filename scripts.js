@@ -1,105 +1,154 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const catalog = document.getElementById('catalog');
 
-    // Функция для загрузки данных из API
     async function fetchCatalog() {
-        const response = await fetch('http://127.0.0.1:5000/api/catalog');
-        if (!response.ok) {
-            console.error('Ошибка загрузки данных');
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/catalog');
+            if (!response.ok) throw new Error('Ошибка загрузки данных');
+            return await response.json();
+        } catch (error) {
+            catalog.innerHTML = `
+                <div class="error-message">
+                    <h2>Произошла ошибка при загрузке данных</h2>
+                    <p>Пожалуйста, попробуйте обновить страницу или зайти позже</p>
+                </div>
+            `;
             return {};
         }
-        return await response.json();
     }
 
-    // Функция для рендеринга списка категорий
-    function renderCategories(data) {
-        catalog.innerHTML = ''; // Очищаем каталог
-        const categoryList = document.createElement('ul'); // Создаем список категорий
+    function renderMainCategories(data) {
+        catalog.innerHTML = '';
 
-        for (const category of Object.keys(data)) {
-            const categoryItem = document.createElement('li'); // Элемент списка
-            categoryItem.textContent = category;
-            categoryItem.style.cursor = 'pointer';
-            categoryItem.addEventListener('click', () => renderProducts(data, category)); // Переход к товарам категории
+        if (Object.keys(data).length === 0) {
+            catalog.innerHTML = `
+                <div class="empty-message">
+                    <h2>Каталог пуст</h2>
+                    <p>В данный момент товары отсутствуют</p>
+                </div>
+            `;
+            return;
+        }
 
+        const categoryList = document.createElement('ul');
+        categoryList.className = 'main-category-list';
+
+        for (const mainCategory of Object.keys(data)) {
+            const categoryItem = document.createElement('li');
+            categoryItem.className = 'main-category-item';
+            categoryItem.textContent = mainCategory;
+            categoryItem.addEventListener('click', () => renderSubCategories(data, mainCategory));
             categoryList.appendChild(categoryItem);
         }
 
         catalog.appendChild(categoryList);
     }
 
-    // Функция для рендеринга товаров в категории
-    function renderProducts(data, category) {
-        catalog.innerHTML = ''; // Очищаем каталог
-
-        const backButton = document.createElement('button');
-        backButton.textContent = 'Назад к категориям';
-        backButton.addEventListener('click', () => renderCategories(data)); // Возврат к списку категорий
-        catalog.appendChild(backButton);
+    function renderSubCategories(data, mainCategory) {
+        catalog.innerHTML = '';
 
         const categoryTitle = document.createElement('h2');
-        categoryTitle.textContent = category;
+        categoryTitle.textContent = mainCategory;
+        categoryTitle.className = 'main-category-title';
         catalog.appendChild(categoryTitle);
 
-        const productList = document.createElement('ul'); // Список товаров
+        const subCategories = data[mainCategory];
+        if (!subCategories || Object.keys(subCategories).length === 0) {
+            const emptyMessage = document.createElement('p');
+            emptyMessage.textContent = 'В этой категории пока нет подкатегорий';
+            catalog.appendChild(emptyMessage);
+        } else {
+            const subCategoryList = document.createElement('ul');
+            subCategoryList.className = 'subcategory-list';
+            for (const subCategory of Object.keys(subCategories)) {
+                const subCategoryItem = document.createElement('li');
+                subCategoryItem.className = 'subcategory-item';
+                subCategoryItem.textContent = subCategory;
+                subCategoryItem.addEventListener('click', () => 
+                    renderProducts(data, mainCategory, subCategory)
+                );
+                subCategoryList.appendChild(subCategoryItem);
+            }
+            catalog.appendChild(subCategoryList);
+        }
 
-        data[category].forEach(product => {
-            const productItem = document.createElement('li'); // Элемент списка товаров
+        // Кнопка "Назад к категориям" внизу
+        const backButton = document.createElement('button');
+        backButton.className = 'back-button bottom-back';
+        backButton.textContent = '← Назад к категориям';
+        backButton.addEventListener('click', () => renderMainCategories(data));
+        catalog.appendChild(backButton);
+    }
+
+    function renderProducts(data, mainCategory, subCategory) {
+        catalog.innerHTML = '';
+
+        const breadcrumbs = document.createElement('div');
+        breadcrumbs.className = 'breadcrumbs';
+        breadcrumbs.innerHTML = `
+            <span>${mainCategory}</span> > <span>${subCategory}</span>
+        `;
+        catalog.appendChild(breadcrumbs);
+
+        const products = data[mainCategory][subCategory];
+        if (!products || products.length === 0) {
+            const emptyMessage = document.createElement('p');
+            emptyMessage.textContent = 'В этой подкатегории пока нет товаров';
+            catalog.appendChild(emptyMessage);
+            return;
+        }
+
+        // Используем тот же стиль, что и для подкатегорий!
+        const productList = document.createElement('ul');
+        productList.className = 'subcategory-list';
+
+        products.forEach(product => {
+            const productItem = document.createElement('li');
+            productItem.className = 'subcategory-item';
             productItem.textContent = product.name;
-            productItem.style.cursor = 'pointer';
-            productItem.addEventListener('click', () => renderProductDetails(product)); // Переход к деталям товара
-
+            productItem.addEventListener('click', () => renderProductDetails(product, data, mainCategory, subCategory));
             productList.appendChild(productItem);
         });
 
         catalog.appendChild(productList);
-    }
 
-    // Функция для рендеринга деталей товара
-    function renderProductDetails(product) {
-        catalog.innerHTML = ''; // Очищаем каталог
-
+        // Кнопка "Назад к подкатегориям" внизу
         const backButton = document.createElement('button');
-        backButton.textContent = 'Назад к товарам';
-        backButton.addEventListener('click', async () => {
-            const data = await fetchCatalog();
-            const category = Object.keys(data).find(cat =>
-                data[cat].some(p => p.name === product.name)
-            );
-            renderProducts(data, category);
-        });
+        backButton.className = 'back-button bottom-back';
+        backButton.textContent = '← Назад к подкатегориям';
+        backButton.addEventListener('click', () => renderSubCategories(data, mainCategory));
         catalog.appendChild(backButton);
-
-        const productTitle = document.createElement('h2');
-        productTitle.textContent = product.name;
-        catalog.appendChild(productTitle);
-
-        if (product.description) {
-            const productDescription = document.createElement('p');
-            productDescription.textContent = `Описание: ${product.description}`;
-            catalog.appendChild(productDescription);
-        }
-
-        if (product.material && product.material.length > 0) {
-            const productMaterial = document.createElement('p');
-            productMaterial.textContent = `Материалы: ${product.material}`;
-            catalog.appendChild(productMaterial);
-        }
-
-        if (product.diameters && product.diameters.length > 0) {
-            const productDiameters = document.createElement('p');
-            productDiameters.textContent = `Диаметры: ${product.diameters}`;
-            catalog.appendChild(productDiameters);
-        }
-
-        if (product.lengths && product.lengths.length > 0) {
-            const productLengths = document.createElement('p');
-            productLengths.textContent = `Длины: ${product.lengths}`;
-            catalog.appendChild(productLengths);
-        }
     }
 
-    // Загружаем и рендерим категории
+    function renderProductDetails(product, data, mainCategory, subCategory) {
+        catalog.innerHTML = '';
+
+        // Просто текстовая карточка
+        const details = document.createElement('div');
+        details.className = 'product-details-plain';
+        details.innerHTML = `
+            <div class="product-details-text">
+                <div class="product-details-name">${product.name}</div>
+                ${product.description ? `<div>${product.description}</div>` : ''}
+                ${product.material ? `<div>Материал: ${product.material}</div>` : ''}
+                ${product.diameters ? `<div>Диаметры: ${product.diameters}</div>` : ''}
+                ${product.lengths ? `<div>Длины: ${product.lengths}</div>` : ''}
+            </div>
+            <div class="product-actions">
+                <button class="contact-button" onclick="location.href='contacts.html'">Заказать</button>
+            </div>
+        `;
+        catalog.appendChild(details);
+
+        // Кнопка "Назад к товарам" внизу
+        const backButton = document.createElement('button');
+        backButton.className = 'back-button bottom-back';
+        backButton.textContent = '← Назад к товарам';
+        backButton.addEventListener('click', () => renderProducts(data, mainCategory, subCategory));
+        catalog.appendChild(backButton);
+    }
+
+    // Загрузить каталог один раз
     const data = await fetchCatalog();
-    renderCategories(data);
+    renderMainCategories(data);
 });

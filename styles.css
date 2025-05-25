@@ -1,0 +1,356 @@
+/* Общие стили */
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #6c7a89; /* спокойный серо-синий */
+    --light-color: #ecf0f1;
+    --dark-color: #2c3e50;
+    --gray-color: #b4bcc2;
+    --white-color: #ffffff;
+    --black-color: #333333;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--black-color);
+    background-color: #f5f5f5;
+    padding-top: 40px; /* Для фиксированной верхней панели */
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Верхняя контактная панель */
+.top-bar {
+    background-color: var(--dark-color);
+    color: var(--white-color);
+    padding: 10px 0;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.contact-info {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.contact-info span {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+.contact-info img {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Шапка */
+header {
+    background-color: var(--white-color);
+    padding: 20px 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo img {
+    height: 60px;
+    width: auto;
+}
+
+nav ul {
+    display: flex;
+    list-style: none;
+}
+
+nav ul li {
+    margin-left: 30px;
+}
+
+nav ul li a {
+    color: var(--dark-color);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 18px;
+    transition: color 0.3s;
+    position: relative;
+}
+
+nav ul li a:hover, nav ul li a.active {
+    color: var(--secondary-color);
+}
+
+nav ul li a.active:after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--secondary-color);
+}
+
+/* Основное содержимое */
+main {
+    padding: 20px 0 40px;
+    min-height: calc(100vh - 200px);
+}
+
+/* Каталог */
+#catalog {
+    width: 100%;
+}
+
+.category-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.category-item {
+    background-color: var(--white-color);
+    border-radius: 5px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    text-align: center;
+}
+
+.category-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.category-item h2 {
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+#header-logo {
+    height: 100px;
+    width: auto;
+}
+
+/* Стили для иконок контактов */
+.contact-card img {
+    width: 24px; /* Размер иконок */
+    height: 24px;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+/* Красивая большая кнопка */
+.main-button, .back-button, .contact-button {
+    display: inline-block;
+    background: var(--secondary-color);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 28px;
+    font-size: 1.1em;
+    font-weight: 500;
+    margin: 20px 0 0 0;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.07);
+}
+.main-button:hover, .main-button:focus,
+.back-button:hover, .back-button:focus,
+.contact-button:hover, .contact-button:focus {
+    background: #4b5a6a;
+}
+
+.breadcrumbs {
+    margin-bottom: 20px;
+    font-size: 1em;
+    color: var(--gray-color);
+}
+.breadcrumbs span {
+    cursor: pointer;
+    color: var(--secondary-color);
+}
+.breadcrumbs span:last-child {
+    color: var(--primary-color);
+    cursor: default;
+}
+
+/* Список товаров */
+.product-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px;
+    list-style: none;
+    padding: 0;
+}
+
+.product-card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(44,62,80,0.08);
+    padding: 24px 18px 18px 18px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.product-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 8px 24px rgba(44,62,80,0.13);
+}
+.product-card h3 {
+    margin-bottom: 10px;
+    color: var(--primary-color);
+    font-size: 1.1em;
+}
+.product-card .description {
+    color: var(--gray-color);
+    font-size: 0.98em;
+    margin-bottom: 8px;
+}
+
+/* Детали товара */
+.product-details {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(44,62,80,0.08);
+    padding: 32px 24px;
+    margin-top: 20px;
+    max-width: 500px;
+}
+.product-details h2 {
+    margin-bottom: 18px;
+    color: var(--primary-color);
+}
+.product-details p {
+    margin-bottom: 10px;
+    font-size: 1.05em;
+}
+.product-actions {
+    margin-top: 18px;
+    text-align: right;
+}
+
+/* Категории — крупный вертикальный список */
+.main-category-list {
+    list-style: none;
+    padding: 0;
+    margin: 40px auto 0 auto;
+    max-width: 600px;
+}
+.main-category-item {
+    font-size: 2em;
+    font-weight: 600;
+    padding: 24px 0;
+    border-bottom: 1px solid #e0e0e0;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+}
+.main-category-item:hover {
+    background: #f5f6fa;
+}
+
+/* Подкатегории — аккуратный список по центру */
+.subcategory-list {
+    list-style: none;
+    padding: 0;
+    margin: 40px auto 0 auto;
+    max-width: 500px;
+    text-align: center;
+}
+.subcategory-item {
+    font-size: 1.3em;
+    font-weight: 500;
+    padding: 18px 0;
+    border-bottom: 1px solid #e0e0e0;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.subcategory-item:hover {
+    background: #f5f6fa;
+}
+
+/* Список товаров — простой вертикальный список */
+.product-list {
+    list-style: none;
+    padding: 0;
+    margin: 40px auto 0 auto;
+    max-width: 600px;
+}
+
+.product-card {
+    font-size: 1.15em;
+    font-weight: 500;
+    padding: 18px 0;
+    border-bottom: 1px solid #e0e0e0;
+    cursor: pointer;
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
+    transition: background 0.15s;
+    text-align: left;
+    display: block;
+}
+
+.product-card:hover {
+    background: #f5f6fa;
+}
+
+/* Карточка товара — просто текст */
+.product-details-plain {
+    margin: 40px auto 0 auto;
+    max-width: 600px;
+    font-size: 1.1em;
+    background: none;
+    box-shadow: none;
+    padding: 0;
+}
+.product-details-name {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin-bottom: 18px;
+}
+.product-details-plain .product-actions {
+    margin-top: 30px;
+    text-align: left;
+}
+
+/* Кнопка "Назад" внизу */
+.bottom-back {
+    display: block;
+    margin: 40px auto 0 auto;
+    width: fit-content;
+}
+
+/* Breadcrumbs */
+.breadcrumbs {
+    margin: 20px 0 0 0;
+    font-size: 1em;
+    color: #888;
+    text-align: left;
+}
