@@ -3,7 +3,6 @@ CREATE TABLE Categories (
     name TEXT NOT NULL,
     parent_id INTEGER,
     description TEXT,
-    UNIQUE(name, parent_id),
     FOREIGN KEY (parent_id) REFERENCES Categories(id) ON DELETE CASCADE
 );
 
@@ -18,3 +17,11 @@ CREATE TABLE Products (
     category_id INTEGER NOT NULL,
     FOREIGN KEY (category_id) REFERENCES Categories(id) ON DELETE CASCADE
 );
+
+WITH RECURSIVE subcategories(id) AS (
+  SELECT id FROM Categories WHERE id = ?
+  UNION ALL
+  SELECT c.id FROM Categories c
+  JOIN subcategories s ON c.parent_id = s.id
+)
+SELECT * FROM Products WHERE category_id IN (SELECT id FROM subcategories);

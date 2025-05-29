@@ -1,63 +1,31 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify
 from flask_cors import CORS
-import sqlite3
-#from collections import defaultdict
+import json
 import os
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app)
 
-@app.route("/")
-def index():
-    return app.send_static_file("index.html")
+JSON_FILES = [
+    "json/hand_tools.json",
+    "json/fasteners.json",
+    "json/leader_t.json"
+]
 
-@app.route("/contacts.html")
-def contacts():
-    return app.send_static_file("contacts.html")
-
-def get_catalog():
-    conn = sqlite3.connect("db/database.sqlite")
-    cursor = conn.cursor()
-
-    # Получаем все категории с parent_id
-    cursor.execute("SELECT id, name, parent_id FROM Categories")
-    categories = {row[0]: {"name": row[1], "parent_id": row[2]} for row in cursor.fetchall()}
-
-    # Получаем все товары
-    cursor.execute("SELECT name, article, description, material, diameters, lengths, category_id FROM Products")
-    products = cursor.fetchall()
-    conn.close()
-
-    # Строим структуру: {main_category: {sub_category: [products]}}
+def load_full_catalog():
     catalog = {}
-    for product in products:
-        name, article, description, material, diameters, lengths, category_id = product
-        cat = categories.get(category_id)
-        if not cat:
-            continue
-        # sub_category
-        subcat_name = cat["name"]
-        # main_category
-        parent_id = cat["parent_id"]
-        maincat_name = categories[parent_id]["name"] if parent_id and parent_id in categories else subcat_name
-
-        if maincat_name not in catalog:
-            catalog[maincat_name] = {}
-        if subcat_name not in catalog[maincat_name]:
-            catalog[maincat_name][subcat_name] = []
-        catalog[maincat_name][subcat_name].append({
-            "name": name,
-            # "article": article,
-            "description": description,
-            "material": material,
-            "diameters": diameters,
-            "lengths": lengths
-        })
+    for path in JSON_FILES:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                # data — это словарь с одной основной категорией
+                catalog.update(data)
     return catalog
 
-@app.route("/api/catalog")
+@app.route("/api/catalog", methods=["GET"])
 def api_catalog():
-    return jsonify(get_catalog())
+    catalog = load_full_catalog()
+    return jsonify(catalog)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host="0.0.0.0", port=5001)
