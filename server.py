@@ -7,9 +7,9 @@ app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app)
 
 JSON_FILES = [
-    "json/hand_tools.json",
-    "json/fasteners.json",
-    "json/leader_t.json"
+    "json/products.json",
+    "json/fasteners.json"
+    #"json/leader_t.json"
 ]
 
 def load_full_catalog():
