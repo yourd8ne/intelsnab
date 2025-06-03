@@ -51,9 +51,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         searchTree(fullData);
 
         catalog.innerHTML = '';
+        catalog.appendChild(renderBreadcrumbs([]));
         const breadcrumbs = document.createElement('div');
         breadcrumbs.className = 'breadcrumbs';
-        breadcrumbs.innerHTML = `<span>Результаты поиска: <b>${query}</b></span>`;
+        breadcrumbs.innerHTML += `<span>Результаты поиска: <b>${query}</b></span>`;
         catalog.appendChild(breadcrumbs);
 
         if (results.length === 0) {
@@ -77,28 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderAnyLevel(data, path = []) {
         catalog.innerHTML = '';
-
-        // "Каталог" как первая хлебная крошка-ссылка
-        const breadcrumbs = document.createElement('div');
-        breadcrumbs.className = 'breadcrumbs';
-        breadcrumbs.innerHTML =
-            `<span class="breadcrumb-link" data-idx="-1">Каталог</span>` +
-            (path.length ? ' > ' : '') +
-            path.map((name, idx) =>
-                `<span class="breadcrumb-link" data-idx="${idx}">${name}</span>`
-            ).join(' > ');
-
-        breadcrumbs.querySelectorAll('.breadcrumb-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                const idx = +e.target.dataset.idx;
-                if (idx === -1) {
-                    renderAnyLevel(fullData, []);
-                } else {
-                    renderAnyLevel(fullData, path.slice(0, idx + 1));
-                }
-            });
-        });
-        catalog.appendChild(breadcrumbs);
+        catalog.appendChild(renderBreadcrumbs(path));
 
         // Получаем текущий уровень данных
         let current = data;
@@ -149,19 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderProductDetails(product, path) {
         catalog.innerHTML = '';
-        // Хлебные крошки
-        const breadcrumbs = document.createElement('div');
-        breadcrumbs.className = 'breadcrumbs';
-        breadcrumbs.innerHTML = path.map((name, idx) => {
-            return `<span class="breadcrumb-link" data-idx="${idx}">${name}</span>`;
-        }).join(' > ') + ` > <span>${getProductName(product)}</span>`;
-        breadcrumbs.querySelectorAll('.breadcrumb-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                const idx = +e.target.dataset.idx;
-                renderAnyLevel(fullData, path.slice(0, idx + 1));
-            });
-        });
-        catalog.appendChild(breadcrumbs);
+        catalog.appendChild(renderBreadcrumbs(path));
 
         // Характеристики
         let characteristics = '';
@@ -212,4 +180,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         return arr || '';
     }
+
+    function renderBreadcrumbs(path = []) {
+        const breadcrumbs = document.createElement('div');
+        breadcrumbs.className = 'breadcrumbs';
+        // Кнопка "Каталог" всегда первая
+        let html = `<span class="breadcrumb-link" data-idx="-1">Каталог</span>`;
+        if (path.length > 0) {
+            html += ' > ' + path.map((name, idx) =>
+                `<span class="breadcrumb-link" data-idx="${idx}">${name}</span>`
+            ).join(' > ');
+        }
+        breadcrumbs.innerHTML = html;
+        // Обработчик для "Каталог"
+        breadcrumbs.querySelector('.breadcrumb-link[data-idx="-1"]').addEventListener('click', () => {
+            renderAnyLevel(fullData, []);
+        });
+        // Обработчики для остальных крошек
+        breadcrumbs.querySelectorAll('.breadcrumb-link[data-idx]:not([data-idx="-1"])').forEach(link => {
+            link.addEventListener('click', (e) => {
+                const idx = +e.target.dataset.idx;
+                renderAnyLevel(fullData, path.slice(0, idx + 1));
+            });
+        });
+        return breadcrumbs;
+    }
+
+    renderAnyLevel(fullData);
 });
