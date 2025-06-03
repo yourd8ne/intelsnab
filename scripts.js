@@ -31,16 +31,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderAnyLevel(data, path = []) {
         catalog.innerHTML = '';
 
-        // Хлебные крошки
+        // "Каталог" как первая хлебная крошка-ссылка
         const breadcrumbs = document.createElement('div');
         breadcrumbs.className = 'breadcrumbs';
-        breadcrumbs.innerHTML = path.map((name, idx) => {
-            return `<span class="breadcrumb-link" data-idx="${idx}">${name}</span>`;
-        }).join(' > ');
+        breadcrumbs.innerHTML =
+            `<span class="breadcrumb-link" data-idx="-1">Каталог</span>` +
+            (path.length ? ' > ' : '') +
+            path.map((name, idx) =>
+                `<span class="breadcrumb-link" data-idx="${idx}">${name}</span>`
+            ).join(' > ');
+
         breadcrumbs.querySelectorAll('.breadcrumb-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 const idx = +e.target.dataset.idx;
-                renderAnyLevel(fullData, path.slice(0, idx + 1));
+                if (idx === -1) {
+                    renderAnyLevel(fullData, []);
+                } else {
+                    renderAnyLevel(fullData, path.slice(0, idx + 1));
+                }
             });
         });
         catalog.appendChild(breadcrumbs);
@@ -57,18 +65,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 catalog.innerHTML += '<p>В этой категории пока нет товаров</p>';
                 return;
             }
-            const productList = document.createElement('ul');
-            productList.className = 'subcategory-list';
+            const productGrid = document.createElement('div');
+            productGrid.className = 'product-grid';
             current.forEach(product => {
-                const productItem = document.createElement('li');
-                productItem.className = 'subcategory-item';
-                productItem.textContent = getProductName(product);
-                productItem.addEventListener('click', () => {
+                const productTile = document.createElement('div');
+                productTile.className = 'product-tile';
+                productTile.textContent = getProductName(product);
+                productTile.addEventListener('click', () => {
                     renderProductDetails(product, path);
                 });
-                productList.appendChild(productItem);
+                productGrid.appendChild(productTile);
             });
-            catalog.appendChild(productList);
+            catalog.appendChild(productGrid);
             return;
         }
 
@@ -78,18 +86,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             catalog.innerHTML += '<p>В этой категории пока нет подкатегорий</p>';
             return;
         }
-        const subCategoryList = document.createElement('ul');
-        subCategoryList.className = 'subcategory-list';
+        const subCategoryGrid = document.createElement('div');
+        subCategoryGrid.className = 'category-grid';
         for (const key of keys) {
-            const subCategoryItem = document.createElement('li');
-            subCategoryItem.className = 'subcategory-item';
-            subCategoryItem.textContent = key;
-            subCategoryItem.addEventListener('click', () => {
+            const subCategoryTile = document.createElement('div');
+            subCategoryTile.className = 'category-tile';
+            subCategoryTile.textContent = key;
+            subCategoryTile.addEventListener('click', () => {
                 renderAnyLevel(fullData, [...path, key]);
             });
-            subCategoryList.appendChild(subCategoryItem);
+            subCategoryGrid.appendChild(subCategoryTile);
         }
-        catalog.appendChild(subCategoryList);
+        catalog.appendChild(subCategoryGrid);
     }
 
     function renderProductDetails(product, path) {
@@ -108,21 +116,53 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         catalog.appendChild(breadcrumbs);
 
+        // Характеристики
+        let characteristics = '';
+        if (
+            product.Описание || product.description ||
+            product.Материал || product.material ||
+            product.Диаметр || product.diameter ||
+            product.Длина || product.length
+        ) {
+            characteristics = `<div class="product-characteristics">
+                <b>Характеристики:</b>
+                <ul>
+                    ${product.Описание || product.description ? `<li>${product.Описание || product.description}</li>` : ''}
+                    ${product.Материал || product.material ? `<li>Материал: ${product.Материал || product.material}</li>` : ''}
+                    ${product.Диаметр || product.diameter ? `<li>Диаметр:${renderArray(product.Диаметр || product.diameter)}</li>` : ''}
+                    ${product.Длина || product.length ? `<li>Длина:${renderArray(product.Длина || product.length)}</li>` : ''}
+                </ul>
+            </div>`;
+        }
+
         // Карточка товара
         const details = document.createElement('div');
-        details.className = 'product-details-plain';
+        details.className = 'product-details-card';
         details.innerHTML = `
-            <div class="product-details-text">
-                <div class="product-details-name">${getProductName(product)}</div>
-                ${product.description || product.Описание ? `<div>${product.description || product.Описание}</div>` : ''}
-                ${product.material || product.Материал ? `<div>Материал: ${product.material || product.Материал}</div>` : ''}
-                ${product.diameters || product.Диаметры ? `<div>Диаметры: ${product.diameters || product.Диаметры}</div>` : ''}
-                ${product.lengths || product.Длины ? `<div>Длины: ${product.lengths || product.Длины}</div>` : ''}
+            <div class="product-details-name">${getProductName(product)}</div>
+            ${characteristics}
+            <div class="product-template-info">
+                <div><b>Наличие:</b> под заказ</div>
+                <div><b>Стоимость:</b> по запросу</div>
+                <div><b>Доставка:</b> Бесплатная до ТК и по Нижнему Новгороду</div>
+                <div><b>Срок поставки:</b> от 3 дней</div>
             </div>
             <div class="product-actions">
                 <button class="contact-button" onclick="location.href='contacts.html'">Заказать</button>
             </div>
         `;
         catalog.appendChild(details);
+    }
+
+    // Для массивов делаем красивый список
+    function renderArray(arr) {
+        if (Array.isArray(arr)) {
+            return '<ul class="char-list">' + arr.map(v => `<li>${v}</li>`).join('') + '</ul>';
+        }
+        // Если строка с запятыми — разбить
+        if (typeof arr === 'string' && arr.includes(',')) {
+            return '<ul class="char-list">' + arr.split(',').map(v => `<li>${v.trim()}</li>`).join('') + '</ul>';
+        }
+        return arr || '';
     }
 });

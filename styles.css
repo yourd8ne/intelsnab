@@ -69,15 +69,17 @@ header {
     margin-bottom: 30px;
 }
 
-.header-content {
+.header-flex {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 40px;
+    margin-bottom: 10px;
 }
 
 .logo img {
-    height: 60px;
+    max-height: 70px;
     width: auto;
+    display: block;
 }
 
 nav ul {
@@ -110,6 +112,14 @@ nav ul li a.active:after {
     width: 100%;
     height: 2px;
     background-color: var(--secondary-color);
+}
+
+.slogan {
+    font-size: 1.15em;
+    color: #234;
+    font-weight: 500;
+    margin-left: 0;
+    white-space: normal;
 }
 
 /* Основное содержимое */
@@ -185,17 +195,23 @@ main {
 }
 
 .breadcrumbs {
-    margin-bottom: 20px;
-    font-size: 1em;
-    color: var(--gray-color);
+    margin: 18px 0 18px 0;
+    font-size: 1.08em;
+    color: #234;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    flex-wrap: wrap;
 }
-.breadcrumbs span {
+.breadcrumb-link {
+    color: #234;
     cursor: pointer;
-    color: var(--secondary-color);
+    text-decoration: underline;
+    transition: color 0.15s;
 }
-.breadcrumbs span:last-child {
-    color: var(--primary-color);
-    cursor: default;
+.breadcrumb-link:hover {
+    color: #1976d2;
+    text-decoration: underline;
 }
 
 /* Список товаров */
@@ -242,13 +258,39 @@ main {
     margin-top: 20px;
     max-width: 500px;
 }
+.product-details-card {
+    border: 2px solid #e3eaf1;
+    border-radius: 14px;
+    background: #fff;
+    padding: 32px 28px 22px 28px;
+    max-width: 480px;
+    margin: 32px auto 0 auto;
+    box-shadow: 0 2px 12px #0001;
+}
 .product-details h2 {
     margin-bottom: 18px;
     color: var(--primary-color);
 }
-.product-details p {
-    margin-bottom: 10px;
-    font-size: 1.05em;
+.product-details-name {
+    font-size: 1.35em;
+    font-weight: 600;
+    margin-bottom: 18px;
+    color: #234;
+}
+.product-characteristics {
+    margin-bottom: 18px;
+}
+.product-characteristics ul {
+    margin: 8px 0 0 0;
+    padding-left: 18px;
+}
+.product-characteristics li {
+    margin-bottom: 4px;
+    font-size: 1em;
+}
+.product-template-info > div {
+    margin-bottom: 6px;
+    font-size: 1.04em;
 }
 .product-actions {
     margin-top: 18px;
@@ -349,8 +391,149 @@ main {
 
 /* Breadcrumbs */
 .breadcrumbs {
-    margin: 20px 0 0 0;
+    margin: 18px 0 18px 0;
+    font-size: 1.08em;
+    color: #234;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    flex-wrap: wrap;
+}
+.breadcrumb-link {
+    color: #234;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.15s;
+}
+.breadcrumb-link:hover {
+    color: #1976d2;
+    text-decoration: underline;
+}
+
+/* Сетки для категорий и товаров */
+.category-grid, .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    margin: 30px 0;
+}
+.category-tile, .product-tile {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #0001;
+    padding: 32px 18px;
+    text-align: center;
+    font-size: 1.15em;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+.category-tile:hover, .product-tile:hover {
+    box-shadow: 0 4px 16px #0002;
+    transform: translateY(-4px) scale(1.03);
+    background: #f5f8fa;
+}
+
+.catalog-home-btn {
+    display: inline-block;
+    margin: 18px 0 8px 0;
+    padding: 8px 22px;
     font-size: 1em;
-    color: #888;
-    text-align: left;
+    background: #f5f8fa;
+    border: 1px solid #c7d0db;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #234;
+    font-weight: 500;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+.catalog-home-btn:hover {
+    background: #e3eaf1;
+    box-shadow: 0 2px 8px #0001;
+}
+
+.char-list {
+    margin: 4px 0 4px 18px;
+    padding: 0;
+}
+.char-list li {
+    display: inline-block;
+    margin-right: 10px;
+    margin-bottom: 2px;
+    font-size: 1em;
+}
+
+/* Дополнительные стили для иконок преимуществ */
+.advantage-icon {
+    width: 28px;
+    height: 28px;
+    vertical-align: middle;
+    margin-right: 12px;
+    margin-bottom: 4px;
+}
+
+/* Стили для секции "О нас" */
+.about-section ul {
+    padding-left: 0;
+    list-style: none;
+}
+.about-section li {
+    margin-bottom: 18px;
+    display: flex;
+    align-items: flex-start;
+}
+.about-section li b {
+    margin-right: 4px;
+}
+
+.advantages-list {
+    list-style: none;
+    padding: 0;
+    margin: 32px 0 0 0;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.advantages-list li {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 28px;
+    align-items: flex-start;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px #0001;
+    padding: 28px 32px 22px 32px;
+    margin-bottom: 28px;
+}
+.advantage-icon {
+    width: 44px;
+    height: 44px;
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+.advantage-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.advantage-title {
+    font-size: 1.15em;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #234;
+}
+.advantage-desc {
+    font-size: 1.04em;
+    color: #222;
+    line-height: 1.5;
+}
+@media (max-width: 700px) {
+    .advantages-list li {
+        grid-template-columns: 36px 1fr;
+        padding: 16px 10px 14px 10px;
+        gap: 12px;
+    }
+    .advantage-icon {
+        width: 28px;
+        height: 28px;
+    }
 }
