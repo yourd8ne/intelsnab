@@ -1,0 +1,7 @@
+Flask==3.1.0
+flask-cors==5.0.1
+lchemy==2.0.39
+typing_extensions==4.12.2
+tzdata==2025.2
+Werkzeug==3.1.3
+xlrd==2.0.1
