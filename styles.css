@@ -537,3 +537,9 @@ main {
         height: 28px;
     }
 }
+
+.search-path {
+    font-size: 0.85em;
+    color: #888;
+    margin-top: 6px;
+}

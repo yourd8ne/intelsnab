@@ -26,7 +26,54 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- Загрузка каталога ---
     fullData = await fetchCatalog();
-    renderAnyLevel(fullData);
+
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.trim().toLowerCase();
+        if (query.length === 0) {
+            renderAnyLevel(fullData);
+            return;
+        }
+        const results = [];
+        function searchTree(node, path = []) {
+            if (Array.isArray(node)) {
+                node.forEach(product => {
+                    const name = getProductName(product).toLowerCase();
+                    if (name.includes(query)) {
+                        results.push({ product, path });
+                    }
+                });
+            } else if (typeof node === 'object' && node !== null) {
+                for (const key in node) {
+                    searchTree(node[key], [...path, key]);
+                }
+            }
+        }
+        searchTree(fullData);
+
+        catalog.innerHTML = '';
+        const breadcrumbs = document.createElement('div');
+        breadcrumbs.className = 'breadcrumbs';
+        breadcrumbs.innerHTML = `<span>Результаты поиска: <b>${query}</b></span>`;
+        catalog.appendChild(breadcrumbs);
+
+        if (results.length === 0) {
+            catalog.innerHTML += '<p>Ничего не найдено</p>';
+            return;
+        }
+        const productGrid = document.createElement('div');
+        productGrid.className = 'product-grid';
+        results.forEach(({ product, path }) => {
+            const productTile = document.createElement('div');
+            productTile.className = 'product-tile';
+            productTile.innerHTML = `<div>${getProductName(product)}</div>
+                <div class="search-path">${path.join(' / ')}</div>`;
+            productTile.addEventListener('click', () => {
+                renderProductDetails(product, path);
+            });
+            productGrid.appendChild(productTile);
+        });
+        catalog.appendChild(productGrid);
+    });
 
     function renderAnyLevel(data, path = []) {
         catalog.innerHTML = '';
