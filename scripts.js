@@ -118,7 +118,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         for (const key of keys) {
             const subCategoryTile = document.createElement('div');
             subCategoryTile.className = 'category-tile';
-            subCategoryTile.textContent = key;
+            // Попытка найти картинку по имени категории
+            const imgName = key.replace(/\s+/g, '_').toLowerCase();
+            const imgPath = `img/${imgName}.jpg`; // или .png, если нужно
+            subCategoryTile.innerHTML = `<img src="${imgPath}" alt="${key}" onerror="this.style.display='none'"><div>${key}</div>`;
             subCategoryTile.addEventListener('click', () => {
                 renderAnyLevel(fullData, [...path, key]);
             });
