@@ -31,6 +31,7 @@
                     <li><a href="index.html" class="active">Каталог</a></li>
                     <li><a href="about.html">О компании</a></li>
                     <li><a href="contacts.html">Контакты</a></li>
+                    <li><a href="#" id="callback-link">Обратный звонок</a></li>
                 </ul>
                 <input type="text" id="search-input" placeholder="Поиск по товарам..." autocomplete="off">
             </nav>
@@ -47,6 +48,23 @@
             <p>© 2025 Intelsnab. Все права защищены.</p>
         </div>
     </footer>
+
+    <div id="callback-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal" id="close-callback-modal">&times;</span>
+            <h2>Оставить заявку</h2>
+            <form id="callback-form">
+            <label>Ваше имя:<br><input type="text" name="name" required></label><br>
+            <label>Телефон:<br><input type="tel" name="phone" required></label><br>
+            <label>Email:<br><input type="email" name="email"></label><br>
+            <label>Комментарий:<br><textarea name="comment"></textarea></label><br>
+            <button type="submit" class="main-button">Отправить</button>
+            </form>
+            <div id="callback-success" style="display:none; color:green; margin-top:10px;">
+            Ваша заявка отправлена! Мы свяжемся с вами.
+            </div>
+        </div>
+    </div>
 
     <script src="scripts.js"></script>
 </body>

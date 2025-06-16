@@ -1,7 +1,9 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import json
 import os
+import smtplib
+from email.mime.text import MIMEText
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app)
@@ -26,6 +28,49 @@ def load_full_catalog():
 def api_catalog():
     catalog = load_full_catalog()
     return jsonify(catalog)
+
+@app.route('/api/order', methods=['POST'])
+def order():
+    data = request.json
+    items = data.get('items', [])
+    body = "Позиции заказа:\n" + "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
+    msg = MIMEText(body, _charset='utf-8')
+    msg['Subject'] = 'Заказ с сайта интелснаб.рф'
+    msg['From'] = 'Grigorijkasurin5611@gmail.com'  # замените на ваш email
+    msg['To'] = 'intelsnab52@bk.ru'    # замените на нужный email
+
+    # Настройте SMTP под ваш почтовый сервис
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login('Grigorijkasurin5611@gmail.com', 'ilbx qake smbt ishy')
+            server.send_message(msg)
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/callback', methods=['POST'])
+def callback():
+    data = request.json
+    body = f"""Заявка с сайта:
+Имя: {data.get('name')}
+Телефон: {data.get('phone')}
+Email: {data.get('email')}
+Комментарий: {data.get('comment')}
+"""
+    msg = MIMEText(body, _charset='utf-8')
+    msg['Subject'] = 'Заявка с сайта (обратный звонок)'
+    msg['From'] = 'Grigorijkasurin5611@gmail.com'  # замените на ваш email
+    msg['To'] = 'intelsnab52@bk.ru'    # замените на нужный email
+
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login('Grigorijkasurin5611@gmail.com', 'ilbx qake smbt ishy')
+            server.send_message(msg)
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)

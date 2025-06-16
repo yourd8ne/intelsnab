@@ -1,3 +1,115 @@
+// --- Корзина ---
+function getCart() {
+    return JSON.parse(localStorage.getItem('cart') || '[]');
+}
+function setCart(cart) {
+    localStorage.setItem('cart', JSON.stringify(cart));
+}
+function renderCartIcon() {
+    let cartBtn = document.getElementById('cart-btn');
+    if (!cartBtn) {
+        cartBtn = document.createElement('button');
+        cartBtn.id = 'cart-btn';
+        cartBtn.className = 'main-button';
+        cartBtn.style.marginLeft = '20px';
+        cartBtn.innerHTML = 'Корзина (<span id="cart-count">0</span>)';
+        cartBtn.onclick = showCart;
+        const nav = document.querySelector('.main-nav');
+        if (nav) nav.appendChild(cartBtn);
+    }
+    const countSpan = document.getElementById('cart-count');
+    if (countSpan) countSpan.textContent = getCart().length;
+}
+function addToCart(productName) {
+    const cart = getCart();
+    cart.push(productName);
+    setCart(cart);
+    alert('Товар добавлен в корзину!');
+    renderCartIcon();
+}
+function showCart() {
+    const cart = getCart();
+    const catalog = document.getElementById('catalog');
+    if (!catalog) return;
+    catalog.innerHTML = '<h2>Корзина</h2>';
+    if (cart.length === 0) {
+        catalog.innerHTML += '<p>Корзина пуста</p>';
+        return;
+    }
+    const ul = document.createElement('ul');
+    ul.style.margin = '24px 0';
+    ul.style.fontSize = '1.2em';
+    cart.forEach((item, idx) => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        // Кнопка удалить
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Удалить';
+        delBtn.style.marginLeft = '16px';
+        delBtn.onclick = () => {
+            cart.splice(idx, 1);
+            setCart(cart);
+            showCart();
+            renderCartIcon();
+        };
+        li.appendChild(delBtn);
+        ul.appendChild(li);
+    });
+    catalog.appendChild(ul);
+
+    // Кнопка "Заказать"
+    const orderBtn = document.createElement('button');
+    orderBtn.className = 'main-button';
+    orderBtn.textContent = 'Заказать';
+    orderBtn.onclick = sendOrder;
+    catalog.appendChild(orderBtn);
+}
+function sendOrder() {
+    const cart = getCart();
+    if (cart.length === 0) return;
+    const now = Date.now();
+    const last = +localStorage.getItem('order_last') || 0;
+    if (now - last < 60000) { // 1 минута
+        alert('Пожалуйста, подождите минуту перед повторной отправкой заказа.');
+        return;
+    }
+    localStorage.setItem('order_last', now);
+
+    // Блокируем кнопку "Заказать" на время запроса
+    const orderBtn = document.querySelector('.main-button');
+    if (orderBtn) {
+        orderBtn.disabled = true;
+        orderBtn.textContent = 'Отправка...';
+    }
+
+    fetch('/api/order', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({items: cart})
+    }).then(res => res.json())
+      .then(data => {
+        const catalog = document.getElementById('catalog');
+        if (orderBtn) {
+            orderBtn.disabled = false;
+            orderBtn.textContent = 'Заказать';
+        }
+        if (data.status === 'ok') {
+            setCart([]);
+            catalog.innerHTML = '<h2>Ваш заказ в работе, менеджер с вами свяжется!</h2>';
+            renderCartIcon();
+        } else {
+            alert('Ошибка отправки заказа: ' + (data.message || ''));
+        }
+      })
+      .catch(() => {
+        if (orderBtn) {
+            orderBtn.disabled = false;
+            orderBtn.textContent = 'Заказать';
+        }
+        alert('Ошибка соединения с сервером!');
+      });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     const catalog = document.getElementById('catalog');
     const searchInput = document.getElementById('search-input');
@@ -77,6 +189,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     function renderAnyLevel(data, path = []) {
+        let node = data;
+        for (const key of path) {
+            node = node[key];
+        }
+
+        // Если node — массив товаров, и выбран только один товар
+        if (Array.isArray(node) && node.length === 1) {
+            renderProductDetails(node[0]);
+            return;
+        }
+
+        // Если node — объект товара (например, у вас товары — объекты с определёнными полями)
+        if (isProduct(node)) {
+            renderProductDetails(node);
+            return;
+        }
+
         catalog.innerHTML = '';
         catalog.appendChild(renderBreadcrumbs(path));
 
@@ -166,10 +295,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div><b>Срок поставки:</b> от 3 дней</div>
             </div>
             <div class="product-actions">
-                <button class="contact-button" onclick="location.href='contacts.html'">Заказать</button>
+                <button class="contact-button" data-product='${encodeURIComponent(getProductName(product))}'>В корзину</button>
             </div>
         `;
         catalog.appendChild(details);
+        details.querySelector('.contact-button').addEventListener('click', function() {
+            addToCart(decodeURIComponent(this.dataset.product));
+        });
     }
 
     // Для массивов делаем красивый список
@@ -209,5 +341,77 @@ document.addEventListener('DOMContentLoaded', async () => {
         return breadcrumbs;
     }
 
+    // Показываем иконку корзины при загрузке
+    renderCartIcon();
+
     renderAnyLevel(fullData);
 });
+
+function isProduct(node) {
+    // Например, если у товара всегда есть поле "name" или "название"
+    return node && typeof node === 'object' && ('name' in node || 'название' in node);
+}
+
+// Открытие/закрытие модального окна
+document.getElementById('close-callback-modal').onclick = function() {
+    document.getElementById('callback-modal').style.display = 'none';
+    document.getElementById('callback-form').reset();
+    document.getElementById('callback-success').style.display = 'none';
+};
+window.onclick = function(event) {
+    if (event.target === document.getElementById('callback-modal')) {
+        document.getElementById('callback-modal').style.display = 'none';
+        document.getElementById('callback-form').reset();
+        document.getElementById('callback-success').style.display = 'none';
+    }
+};
+
+// Отправка формы
+document.getElementById('callback-form').onsubmit = function(e) {
+    e.preventDefault();
+    const now = Date.now();
+    const last = +localStorage.getItem('callback_last') || 0;
+    if (now - last < 60000) { // 1 минута
+        alert('Пожалуйста, подождите минуту перед повторной отправкой.');
+        return;
+    }
+    localStorage.setItem('callback_last', now);
+
+    const btn = this.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = 'Отправка...';
+
+    const formData = new FormData(this);
+    fetch('/api/callback', {
+        method: 'POST',
+        body: JSON.stringify({
+            name: formData.get('name'),
+            phone: formData.get('phone'),
+            email: formData.get('email'),
+            comment: formData.get('comment')
+        }),
+        headers: {'Content-Type': 'application/json'}
+    }).then(res => res.json())
+      .then(data => {
+        btn.disabled = false;
+        btn.textContent = 'Отправить';
+        if (data.status === 'ok') {
+            document.getElementById('callback-success').innerHTML =
+                'Ваша заявка отправлена! Мы свяжемся с вами в течение суток.';
+            document.getElementById('callback-success').style.display = 'block';
+            this.reset();
+        } else {
+            alert('Ошибка отправки: ' + (data.message || ''));
+        }
+      })
+      .catch(() => {
+        btn.disabled = false;
+        btn.textContent = 'Отправить';
+        alert('Ошибка соединения с сервером!');
+      });
+};
+
+document.getElementById('callback-link').onclick = function(e) {
+    e.preventDefault();
+    document.getElementById('callback-modal').style.display = 'block';
+};
