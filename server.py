@@ -33,13 +33,24 @@ def api_catalog():
 def order():
     data = request.json
     items = data.get('items', [])
-    body = "Позиции заказа:\n" + "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
+    company = data.get('company', '')
+    name = data.get('name', '')
+    phone = data.get('phone', '')
+    email = data.get('email', '')
+    comment = data.get('comment', '')
+
+    # Только название и число, по одному на строку
+    body = "\n".join(
+        f"{item['name']}: {item['count']}" for item in items
+    )
+    # Добавляем реквизиты
+    body += f"\n\nКомпания: {company}\nИмя: {name}\nТелефон: {phone}\nEmail: {email}\nКомментарий: {comment}"
+
     msg = MIMEText(body, _charset='utf-8')
     msg['Subject'] = 'Заказ с сайта интелснаб.рф'
-    msg['From'] = 'Grigorijkasurin5611@gmail.com'  # замените на ваш email
-    msg['To'] = 'intelsnab52@bk.ru'    # замените на нужный email
+    msg['From'] = 'Grigorijkasurin5611@gmail.com'
+    msg['To'] = 'intelsnab52@bk.ru'
 
-    # Настройте SMTP под ваш почтовый сервис
     try:
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
@@ -53,6 +64,7 @@ def order():
 def callback():
     data = request.json
     body = f"""Заявка с сайта:
+Компания: {data.get('company')}
 Имя: {data.get('name')}
 Телефон: {data.get('phone')}
 Email: {data.get('email')}

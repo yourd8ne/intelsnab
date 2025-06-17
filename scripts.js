@@ -13,90 +13,140 @@ function renderCartIcon() {
         cartBtn.className = 'main-button';
         cartBtn.style.marginLeft = '20px';
         cartBtn.innerHTML = 'Корзина (<span id="cart-count">0</span>)';
-        cartBtn.onclick = showCart;
         const nav = document.querySelector('.main-nav');
         if (nav) nav.appendChild(cartBtn);
     }
     const countSpan = document.getElementById('cart-count');
     if (countSpan) countSpan.textContent = getCart().length;
+
+    // Всегда назначаем обработчик!
+    cartBtn.onclick = showCart;
 }
 function addToCart(productName) {
-    const cart = getCart();
-    cart.push(productName);
+    let cart = getCart();
+    const idx = cart.findIndex(item => item.name === productName);
+    if (idx !== -1) {
+        cart[idx].count += 1;
+    } else {
+        cart.push({ name: productName, count: 1 });
+    }
     setCart(cart);
     alert('Товар добавлен в корзину!');
     renderCartIcon();
 }
 function showCart() {
-    const cart = getCart();
+    let cart = getCart();
     const catalog = document.getElementById('catalog');
     if (!catalog) return;
-    catalog.innerHTML = '<h2>Корзина</h2>';
+    // --- Новый контейнер ---
+    let html = `<div class="cart-section"><h2>Корзина</h2>`;
     if (cart.length === 0) {
-        catalog.innerHTML += '<p>Корзина пуста</p>';
+        html += '<p style="font-size:1.2em; text-align:center;">Корзина пуста</p></div>';
+        catalog.innerHTML = html;
         return;
     }
-    const ul = document.createElement('ul');
-    ul.style.margin = '24px 0';
-    ul.style.fontSize = '1.2em';
+    html += `<ul class="cart-list">`;
     cart.forEach((item, idx) => {
-        const li = document.createElement('li');
-        li.textContent = item;
-        // Кнопка удалить
-        const delBtn = document.createElement('button');
-        delBtn.textContent = 'Удалить';
-        delBtn.style.marginLeft = '16px';
-        delBtn.onclick = () => {
+        html += `
+        <li>
+            <span class="cart-item-name">${item.name}</span>
+            <button class="cart-qty-btn" data-idx="${idx}" data-action="minus">-</button>
+            <span class="cart-qty">${item.count}</span>
+            <button class="cart-qty-btn" data-idx="${idx}" data-action="plus">+</button>
+            <button class="cart-del-btn" data-idx="${idx}">Удалить</button>
+        </li>`;
+    });
+    html += `</ul>`;
+
+    html += `
+    <form id="order-form">
+      <label>Название компании:<br><input type="text" id="order-company" name="company"></label>
+      <label>Ваше имя:<br><input type="text" id="order-name" name="name" required></label>
+      <label>Телефон:<br><input type="tel" id="order-phone" name="phone" required></label>
+      <label>Email:<br><input type="email" id="order-email" name="email"></label>
+      <label>Комментарий:<br><textarea id="order-comment" name="comment"></textarea></label>
+      <button type="button" class="main-button" id="order-submit-btn">Заказать</button>
+      <div id="order-success" style="display:none; color:green; margin-top:10px;"></div>
+    </form>
+    </div>
+    `;
+    catalog.innerHTML = html;
+
+    // Обработчики для +/-
+    document.querySelectorAll('.cart-qty-btn').forEach(btn => {
+        btn.onclick = function() {
+            const idx = +this.dataset.idx;
+            const action = this.dataset.action;
+            if (action === 'plus') cart[idx].count += 1;
+            if (action === 'minus' && cart[idx].count > 1) cart[idx].count -= 1;
+            setCart(cart);
+            showCart();
+            renderCartIcon();
+        };
+    });
+    // Обработчик для удаления
+    document.querySelectorAll('.cart-del-btn').forEach(btn => {
+        btn.onclick = function() {
+            const idx = +this.dataset.idx;
             cart.splice(idx, 1);
             setCart(cart);
             showCart();
             renderCartIcon();
         };
-        li.appendChild(delBtn);
-        ul.appendChild(li);
     });
-    catalog.appendChild(ul);
 
-    // Кнопка "Заказать"
-    const orderBtn = document.createElement('button');
-    orderBtn.className = 'main-button';
-    orderBtn.textContent = 'Заказать';
-    orderBtn.onclick = sendOrder;
-    catalog.appendChild(orderBtn);
+    document.getElementById('order-submit-btn').onclick = sendOrder;
 }
 function sendOrder() {
     const cart = getCart();
     if (cart.length === 0) return;
     const now = Date.now();
     const last = +localStorage.getItem('order_last') || 0;
-    if (now - last < 60000) { // 1 минута
-        alert('Пожалуйста, подождите минуту перед повторной отправкой заказа.');
+    if (now - last < 180000) { // 3 минуты = 180000 мс
+        alert('Пожалуйста, подождите 3 минуты перед повторной отправкой заказа.');
         return;
     }
     localStorage.setItem('order_last', now);
 
-    // Блокируем кнопку "Заказать" на время запроса
-    const orderBtn = document.querySelector('.main-button');
+    const orderBtn = document.getElementById('order-submit-btn');
     if (orderBtn) {
         orderBtn.disabled = true;
         orderBtn.textContent = 'Отправка...';
     }
 
+    // Получаем данные формы
+    const company = document.getElementById('order-company').value;
+    const name = document.getElementById('order-name').value;
+    const phone = document.getElementById('order-phone').value;
+    const email = document.getElementById('order-email').value;
+    const comment = document.getElementById('order-comment').value;
+
     fetch('/api/order', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({items: cart})
+        body: JSON.stringify({
+            items: cart,
+            company,
+            name,
+            phone,
+            email,
+            comment
+        })
     }).then(res => res.json())
       .then(data => {
-        const catalog = document.getElementById('catalog');
+        const orderSuccess = document.getElementById('order-success');
         if (orderBtn) {
             orderBtn.disabled = false;
             orderBtn.textContent = 'Заказать';
         }
         if (data.status === 'ok') {
             setCart([]);
-            catalog.innerHTML = '<h2>Ваш заказ в работе, менеджер с вами свяжется!</h2>';
+            if (orderSuccess) {
+                orderSuccess.innerHTML = 'Ваш заказ в работе, менеджер с вами свяжется!';
+                orderSuccess.style.display = 'block';
+            }
             renderCartIcon();
+            document.getElementById('order-form').reset();
         } else {
             alert('Ошибка отправки заказа: ' + (data.message || ''));
         }
@@ -371,8 +421,8 @@ document.getElementById('callback-form').onsubmit = function(e) {
     e.preventDefault();
     const now = Date.now();
     const last = +localStorage.getItem('callback_last') || 0;
-    if (now - last < 60000) { // 1 минута
-        alert('Пожалуйста, подождите минуту перед повторной отправкой.');
+    if (now - last < 180000) { // 3 минуты = 180000 мс
+        alert('Пожалуйста, подождите 3 минуты перед повторной отправкой.');
         return;
     }
     localStorage.setItem('callback_last', now);
@@ -385,6 +435,7 @@ document.getElementById('callback-form').onsubmit = function(e) {
     fetch('/api/callback', {
         method: 'POST',
         body: JSON.stringify({
+            company: formData.get('company'),
             name: formData.get('name'),
             phone: formData.get('phone'),
             email: formData.get('email'),

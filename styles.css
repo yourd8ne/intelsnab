@@ -607,17 +607,31 @@ main {
     border-radius: 16px;
 }
 
+.main-nav {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-top: 15px;
+    /* Добавьте высоту для выравнивания */
+    min-height: 48px;
+}
 #cart-btn {
     background: #1976d2;
     color: #fff;
     border: none;
     border-radius: 8px;
-    padding: 10px 22px;
-    font-size: 1em;
+    padding: 12px 28px;
+    font-size: 1.1em;
     font-weight: 500;
     cursor: pointer;
     margin-left: 20px;
+    margin-bottom: 4px; /* Чуть выше */
     transition: background 0.2s;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.07);
+    display: flex;
+    align-items: center;
+    height: 44px; /* Сделать чуть выше */
+    margin-top: -1px; /* Поднять на 2px */
 }
 #cart-btn:hover {
     background: #1256a0;
@@ -668,5 +682,130 @@ main {
     margin-top: 18px;
     color: #1976d2;
     font-size: 1.1em;
+    text-align: center;
+}
+
+/* --- Стили для корзины --- */
+.cart-section {
+    max-width: 1200px;      /* Было 480px, стало шире */
+    margin: 40px auto 0 auto;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(44,62,80,0.10);
+    padding: 40px 48px 36px 48px; /* Увеличен внутренний отступ */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.cart-section h2 {
+    font-size: 2.1em;
+    font-weight: 700;
+    margin-bottom: 28px;
+    color: #234;
+    text-align: center;
+}
+
+.cart-list {
+    width: 100%;
+    list-style: none;
+    margin-bottom: 32px;
+    padding: 0;
+}
+
+.cart-list li {
+    font-size: 1.25em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    background: #f5f8fa;
+    border-radius: 10px;
+    padding: 16px 18px;
+    box-shadow: 0 2px 8px #0001;
+}
+
+.cart-item-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.cart-qty-btn {
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 1.3em;
+    margin: 0 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.cart-qty-btn:hover {
+    background: #1256a0;
+}
+.cart-qty {
+    font-size: 1.2em;
+    min-width: 32px;
+    display: inline-block;
+    text-align: center;
+}
+
+.cart-del-btn {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 1em;
+    margin-left: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.cart-del-btn:hover {
+    background: #c0392b;
+}
+
+/* Форма заказа в корзине */
+#order-form {
+    width: 100%;
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#order-form label {
+    width: 100%;
+    font-size: 1.08em;
+    margin-bottom: 14px;
+    text-align: left;
+}
+#order-form input, #order-form textarea {
+    width: 100%;
+    padding: 12px 12px;
+    border-radius: 8px;
+    border: 1px solid #b4bcc2;
+    font-size: 1.08em;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    box-sizing: border-box;
+    background: #f8fafc;
+}
+#order-form textarea {
+    min-height: 60px;
+    resize: vertical;
+}
+#order-submit-btn {
+    width: 100%;
+    margin-top: 18px;
+    font-size: 1.15em;
+    padding: 16px 0;
+    border-radius: 10px;
+}
+#order-success {
+    margin-top: 18px;
+    color: #1976d2;
+    font-size: 1.15em;
     text-align: center;
 }

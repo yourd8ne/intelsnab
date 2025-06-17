@@ -34,6 +34,7 @@
                     <li><a href="#" id="callback-link">Обратный звонок</a></li>
                 </ul>
                 <input type="text" id="search-input" placeholder="Поиск по товарам..." autocomplete="off">
+                <button id="cart-btn" class="main-button">Корзина (<span id="cart-count">0</span>)</button>
             </nav>
         </div>
     </header>
@@ -54,11 +55,12 @@
             <span class="close-modal" id="close-callback-modal">&times;</span>
             <h2>Оставить заявку</h2>
             <form id="callback-form">
-            <label>Ваше имя:<br><input type="text" name="name" required></label><br>
-            <label>Телефон:<br><input type="tel" name="phone" required></label><br>
-            <label>Email:<br><input type="email" name="email"></label><br>
-            <label>Комментарий:<br><textarea name="comment"></textarea></label><br>
-            <button type="submit" class="main-button">Отправить</button>
+                <label>Название компании:<br><input type="text" name="company"></label><br>
+                <label>Ваше имя:<br><input type="text" name="name" required></label><br>
+                <label>Телефон:<br><input type="tel" name="phone" required></label><br>
+                <label>Email:<br><input type="email" name="email"></label><br>
+                <label>Комментарий:<br><textarea name="comment"></textarea></label><br>
+                <button type="submit" class="main-button">Отправить</button>
             </form>
             <div id="callback-success" style="display:none; color:green; margin-top:10px;">
             Ваша заявка отправлена! Мы свяжемся с вами.
