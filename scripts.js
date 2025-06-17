@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function fetchCatalog() {
         try {
-            const response = await fetch('http://localhost:5001/api/catalog');
+            const response = await fetch('/api/catalog');
             if (!response.ok) throw new Error('Ошибка загрузки данных');
             return await response.json();
         } catch (error) {
