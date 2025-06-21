@@ -85,4 +85,4 @@ Email: {data.get('email')}
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001)#81.19.135.188
+    app.run(host="81.19.135.188", port=5001)
