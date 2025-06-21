@@ -22,13 +22,13 @@ function renderCartIcon() {
     // Всегда назначаем обработчик!
     cartBtn.onclick = showCart;
 }
-function addToCart(productName) {
+function addToCart(productName, qty = 1) {
     let cart = getCart();
     const idx = cart.findIndex(item => item.name === productName);
     if (idx !== -1) {
-        cart[idx].count += 1;
+        cart[idx].count += qty;
     } else {
-        cart.push({ name: productName, count: 1 });
+        cart.push({ name: productName, count: qty });
     }
     setCart(cart);
     alert('Товар добавлен в корзину!');
@@ -38,7 +38,6 @@ function showCart() {
     let cart = getCart();
     const catalog = document.getElementById('catalog');
     if (!catalog) return;
-    // --- Новый контейнер ---
     let html = `<div class="cart-section"><h2>Корзина</h2>`;
     if (cart.length === 0) {
         html += '<p style="font-size:1.2em; text-align:center;">Корзина пуста</p></div>';
@@ -50,9 +49,7 @@ function showCart() {
         html += `
         <li>
             <span class="cart-item-name">${item.name}</span>
-            <button class="cart-qty-btn" data-idx="${idx}" data-action="minus">-</button>
-            <span class="cart-qty">${item.count}</span>
-            <button class="cart-qty-btn" data-idx="${idx}" data-action="plus">+</button>
+            <input type="number" class="cart-qty-input" data-idx="${idx}" min="1" value="${item.count}" style="width:60px;">
             <button class="cart-del-btn" data-idx="${idx}">Удалить</button>
         </li>`;
     });
@@ -65,25 +62,25 @@ function showCart() {
       <label>Телефон:<br><input type="tel" id="order-phone" name="phone" required></label>
       <label>Email:<br><input type="email" id="order-email" name="email"></label>
       <label>Комментарий:<br><textarea id="order-comment" name="comment"></textarea></label>
-      <button type="button" class="main-button" id="order-submit-btn">Заказать</button>
+      <button type="button" class="main-button" id="order-submit-btn">Оформить заказ</button>
       <div id="order-success" style="display:none; color:green; margin-top:10px;"></div>
     </form>
     </div>
     `;
     catalog.innerHTML = html;
 
-    // Обработчики для +/-
-    document.querySelectorAll('.cart-qty-btn').forEach(btn => {
-        btn.onclick = function() {
+    // Обработчик изменения количества
+    document.querySelectorAll('.cart-qty-input').forEach(input => {
+        input.onchange = function() {
             const idx = +this.dataset.idx;
-            const action = this.dataset.action;
-            if (action === 'plus') cart[idx].count += 1;
-            if (action === 'minus' && cart[idx].count > 1) cart[idx].count -= 1;
+            let val = Math.max(1, parseInt(this.value) || 1);
+            cart[idx].count = val;
             setCart(cart);
             showCart();
             renderCartIcon();
         };
     });
+
     // Обработчик для удаления
     document.querySelectorAll('.cart-del-btn').forEach(btn => {
         btn.onclick = function() {
@@ -137,7 +134,7 @@ function sendOrder() {
         const orderSuccess = document.getElementById('order-success');
         if (orderBtn) {
             orderBtn.disabled = false;
-            orderBtn.textContent = 'Заказать';
+            orderBtn.textContent = 'Оформить заказ';
         }
         if (data.status === 'ok') {
             setCart([]);
@@ -154,7 +151,7 @@ function sendOrder() {
       .catch(() => {
         if (orderBtn) {
             orderBtn.disabled = false;
-            orderBtn.textContent = 'Заказать';
+            orderBtn.textContent = 'Оформить заказ';
         }
         alert('Ошибка соединения с сервером!');
       });
@@ -345,12 +342,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div><b>Срок поставки:</b> от 3 дней</div>
             </div>
             <div class="product-actions">
+                <input type="number" min="1" value="1" id="product-qty-input" style="width:60px;">
                 <button class="contact-button" data-product='${encodeURIComponent(getProductName(product))}'>В корзину</button>
             </div>
         `;
         catalog.appendChild(details);
         details.querySelector('.contact-button').addEventListener('click', function() {
-            addToCart(decodeURIComponent(this.dataset.product));
+            const qty = Math.max(1, parseInt(document.getElementById('product-qty-input').value) || 1);
+            addToCart(decodeURIComponent(this.dataset.product), qty);
         });
     }
 
