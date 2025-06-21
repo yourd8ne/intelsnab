@@ -822,11 +822,12 @@ main {
 /* --- Стили для поля количества --- */
 input[type="number"].cart-qty-input,
 #product-qty-input {
-    width: 110px;           /* было 70px */
-    min-width: 90px;        /* было 60px */
-    max-width: 140px;       /* было 90px */
-    padding: 12px 18px;     /* было 8px 10px */
-    font-size: 1.18em;      /* чуть крупнее */
+    width: 120px;
+    min-width: 100px;
+    max-width: 160px;
+    padding: 10px 8px;
+    font-size: 1.18em;
+    letter-spacing: 0.04em;
     border: 1.5px solid #b4bcc2;
     border-radius: 8px;
     background: #f8fafc;
