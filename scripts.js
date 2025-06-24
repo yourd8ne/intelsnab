@@ -62,6 +62,9 @@ function showCart() {
       <label>Телефон:<br><input type="tel" id="order-phone" name="phone" required></label>
       <label>Email:<br><input type="email" id="order-email" name="email"></label>
       <label>Комментарий:<br><textarea id="order-comment" name="comment"></textarea></label>
+      <h3 style=" text-align:center;">
+      Оплата производится только по безналичному расчету
+      </h3>
       <button type="button" class="main-button" id="order-submit-btn">Оформить заказ</button>
       <div id="order-success" style="display:none; color:green; margin-top:10px;"></div>
     </form>
@@ -247,7 +250,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Если node — объект товара (например, у вас товары — объекты с определёнными полями)
+        // Если node — объект товара
         if (isProduct(node)) {
             renderProductDetails(node);
             return;
@@ -256,7 +259,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         catalog.innerHTML = '';
         catalog.appendChild(renderBreadcrumbs(path));
 
-        // Получаем текущий уровень данных
         let current = data;
         for (const key of path) {
             current = current[key];
@@ -273,7 +275,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             current.forEach(product => {
                 const productTile = document.createElement('div');
                 productTile.className = 'product-tile';
-                productTile.textContent = getProductName(product);
+                // Используем h3 для товара
+                productTile.innerHTML = `<h3>${getProductName(product)}</h3>`;
                 productTile.addEventListener('click', () => {
                     renderProductDetails(product, path);
                 });
@@ -294,10 +297,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         for (const key of keys) {
             const subCategoryTile = document.createElement('div');
             subCategoryTile.className = 'category-tile';
-            // Попытка найти картинку по имени категории
+            // Используем h2 для категории
             const imgName = key.replace(/\s+/g, '_').toLowerCase();
-            const imgPath = `img/${imgName}.jpg`; // или .png, если нужно
-            subCategoryTile.innerHTML = `<img src="${imgPath}" alt="${key}" onerror="this.style.display='none'"><div>${key}</div>`;
+            const imgPath = `img/${imgName}.jpg`;
+            subCategoryTile.innerHTML = `<img src="${imgPath}" alt="${key}" onerror="this.style.display='none'"><h2>${key}</h2>`;
             subCategoryTile.addEventListener('click', () => {
                 renderAnyLevel(fullData, [...path, key]);
             });
