@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import json
 import os
@@ -11,7 +11,6 @@ CORS(app)
 JSON_FILES = [
     "json/products.json",
     "json/fasteners.json"
-    #"json/leader_t.json"
 ]
 
 def load_full_catalog():
@@ -20,7 +19,6 @@ def load_full_catalog():
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                # data — это словарь с одной основной категорией
                 catalog.update(data)
     return catalog
 
@@ -39,11 +37,10 @@ def order():
     email = data.get('email', '')
     comment = data.get('comment', '')
 
-    # Только название и число, по одному на строку
     body = "\n".join(
         f"{item['name']}: {item['count']}" for item in items
     )
-    # Добавляем реквизиты
+
     body += f"\n\nКомпания: {company}\nИмя: {name}\nТелефон: {phone}\nEmail: {email}\nКомментарий: {comment}"
 
     msg = MIMEText(body, _charset='utf-8')
@@ -72,8 +69,8 @@ Email: {data.get('email')}
 """
     msg = MIMEText(body, _charset='utf-8')
     msg['Subject'] = 'Заявка с сайта (обратный звонок)'
-    msg['From'] = 'Grigorijkasurin5611@gmail.com'  # замените на ваш email
-    msg['To'] = 'intelsnab52@bk.ru'    # замените на нужный email
+    msg['From'] = 'Grigorijkasurin5611@gmail.com'
+    msg['To'] = 'intelsnab52@bk.ru'
 
     try:
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
@@ -83,6 +80,15 @@ Email: {data.get('email')}
         return jsonify({'status': 'ok'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    # Если это файл (например, картинка, скрипт, стиль) — отдать файл
+    if '.' in path:
+        return send_from_directory('.', path)
+    # Для всех остальных путей отдаём index.html
+    return send_from_directory('.', 'index.html')
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)

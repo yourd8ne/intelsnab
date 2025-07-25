@@ -18,8 +18,6 @@ function renderCartIcon() {
     }
     const countSpan = document.getElementById('cart-count');
     if (countSpan) countSpan.textContent = getCart().length;
-
-    // Всегда назначаем обработчик!
     cartBtn.onclick = showCart;
 }
 function addToCart(productName, qty = 1) {
@@ -49,7 +47,7 @@ function showCart() {
         html += `
         <li>
             <span class="cart-item-name">${item.name}</span>
-            <input type="number" class="cart-qty-input" data-idx="${idx}" min="1" value="${item.count}" style="width:60px;">
+            <input type="number" class="cart-qty-input" data-idx="${idx}" min="1" value="${item.count}">
             <button class="cart-del-btn" data-idx="${idx}">Удалить</button>
         </li>`;
     });
@@ -160,311 +158,254 @@ function sendOrder() {
       });
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+// --- Глобальные переменные ---
+let fullData = {}
+
+// --- Универсальный геттер для имени товара ---
+function getProductName(product) {
+    return product.name || product.Наименование || product.Название || "Без названия";
+}
+
+// --- Глобальная функция загрузки каталога ---
+async function fetchCatalog() {
     const catalog = document.getElementById('catalog');
-    const searchInput = document.getElementById('search-input');
-    let fullData = {};
-
-    // Универсальный геттер для имени товара
-    function getProductName(product) {
-        return product.name || product.Наименование || product.Название || "Без названия";
-    }
-
-    async function fetchCatalog() {
-        try {
-            const response = await fetch('/api/catalog');
-            if (!response.ok) throw new Error('Ошибка загрузки данных');
-            return await response.json();
-        } catch (error) {
+    try {
+        const response = await fetch('/api/catalog');
+        if (!response.ok) throw new Error('Ошибка загрузки данных');
+        return await response.json();
+    } catch (error) {
+        if (catalog) {
             catalog.innerHTML = `
                 <div class="error-message">
                     <h2>Произошла ошибка при загрузке данных</h2>
                     <p>Пожалуйста, попробуйте обновить страницу или зайти позже</p>
                 </div>
             `;
-            return {};
         }
+        return {};
+    }
+}
+
+// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ URL ---
+function pathToSlug(path) {
+    return path.map(s => encodeURIComponent(s.replace(/\s+/g, '-').toLowerCase())).join('/');
+}
+function slugToPath(slug) {
+    return slug.split('/').map(s => decodeURIComponent(s.replace(/-/g, ' ')));
+}
+
+// --- РЕНДЕР РАЗДЕЛОВ/ПОДРАЗДЕЛОВ С ИЗМЕНЕНИЕМ URL ---
+function renderAnyLevel(data, path = [], push = false) {
+    if (push) {
+        const slug = pathToSlug(path);
+        history.pushState({ path }, '', slug ? `/category/${slug}` : '/');
     }
 
-    // --- Загрузка каталога ---
-    fullData = await fetchCatalog();
+    let node = data;
+    for (const key of path) {
+        node = node[key];
+    }
 
-    searchInput.addEventListener('input', () => {
-        const query = searchInput.value.trim().toLowerCase();
-        if (query.length === 0) {
-            renderAnyLevel(fullData);
-            return;
-        }
-        const results = [];
-        function searchTree(node, path = []) {
-            if (Array.isArray(node)) {
-                node.forEach(product => {
-                    const name = getProductName(product).toLowerCase();
-                    if (name.includes(query)) {
-                        results.push({ product, path });
-                    }
-                });
-            } else if (typeof node === 'object' && node !== null) {
-                for (const key in node) {
-                    searchTree(node[key], [...path, key]);
-                }
-            }
-        }
-        searchTree(fullData);
+    // Если node — массив товаров, и выбран только один товар
+    if (Array.isArray(node) && node.length === 1) {
+        renderProductDetails(node[0], path, true);
+        return;
+    }
 
-        catalog.innerHTML = '';
-        catalog.appendChild(renderBreadcrumbs([]));
-        const breadcrumbs = document.createElement('div');
-        breadcrumbs.className = 'breadcrumbs';
-        breadcrumbs.innerHTML += `<span>Результаты поиска: <b>${query}</b></span>`;
-        catalog.appendChild(breadcrumbs);
+    // Если node — объект товара
+    if (isProduct(node)) {
+        renderProductDetails(node, path, true);
+        return;
+    }
 
-        if (results.length === 0) {
-            catalog.innerHTML += '<p>Ничего не найдено</p>';
+    const catalog = document.getElementById('catalog');
+    catalog.innerHTML = '';
+    catalog.appendChild(renderBreadcrumbs(path));
+
+    let current = data;
+    for (const key of path) {
+        current = current[key];
+    }
+
+    // Если это массив товаров
+    if (Array.isArray(current)) {
+        if (current.length === 0) {
+            catalog.innerHTML += '<p>В этой категории пока нет товаров</p>';
             return;
         }
         const productGrid = document.createElement('div');
         productGrid.className = 'product-grid';
-        results.forEach(({ product, path }) => {
+        current.forEach(product => {
             const productTile = document.createElement('div');
             productTile.className = 'product-tile';
-            productTile.innerHTML = `<div>${getProductName(product)}</div>
-                <div class="search-path">${path.join(' / ')}</div>`;
+            productTile.innerHTML = `<h3>${getProductName(product)}</h3>`;
             productTile.addEventListener('click', () => {
-                renderProductDetails(product, path);
+                renderProductDetails(product, path, true);
             });
             productGrid.appendChild(productTile);
         });
         catalog.appendChild(productGrid);
+        return;
+    }
+
+    // Если это объект с подкатегориями
+    const keys = Object.keys(current);
+    if (keys.length === 0) {
+        catalog.innerHTML += '<p>В этой категории пока нет подкатегорий</p>';
+        return;
+    }
+    const subCategoryGrid = document.createElement('div');
+    subCategoryGrid.className = 'category-grid';
+    for (const key of keys) {
+        const subCategoryTile = document.createElement('div');
+        subCategoryTile.className = 'category-tile';
+        // Абсолютный путь к картинке!
+        const imgName = key.replace(/\s+/g, '_').toLowerCase();
+        const imgPath = `/img/${imgName}.jpg`;
+        subCategoryTile.innerHTML = `<img src="${imgPath}" alt="${key}" onerror="this.style.display='none'"><h2>${key}</h2>`;
+        subCategoryTile.addEventListener('click', () => {
+            renderAnyLevel(data, [...path, key], true);
+        });
+        subCategoryGrid.appendChild(subCategoryTile);
+    }
+    catalog.appendChild(subCategoryGrid);
+}
+
+// --- РЕНДЕР КАРТОЧКИ ТОВАРА С ИЗМЕНЕНИЕМ URL ---
+function renderProductDetails(product, path, push = false) {
+    if (push) {
+        const slug = pathToSlug(path.concat([getProductName(product)]));
+        history.pushState({ path: path.concat([getProductName(product)]) }, '', `/product/${slug}`);
+    }
+
+    const catalog = document.getElementById('catalog');
+    catalog.innerHTML = '';
+    catalog.appendChild(renderBreadcrumbs(path));
+
+    // Характеристики
+    let characteristics = '';
+    if (
+        product.Описание || product.description ||
+        product.Материал || product.material ||
+        product.Диаметр || product.diameter ||
+        product.Длина || product.length
+    ) {
+        characteristics = `<div class="product-characteristics">
+            <b>Характеристики:</b>
+            <ul>
+                ${product.Описание || product.description ? `<li>${product.Описание || product.description}</li>` : ''}
+                ${product.Материал || product.material ? `<li>Материал: ${product.Материал || product.material}</li>` : ''}
+                ${product.Диаметр || product.diameter ? `<li>Диаметр:${renderArray(product.Диаметр || product.diameter)}</li>` : ''}
+                ${product.Длина || product.length ? `<li>Длина:${renderArray(product.Длина || product.length)}</li>` : ''}
+            </ul>
+        </div>`;
+    }
+
+    // Карточка товара
+    const details = document.createElement('div');
+    details.className = 'product-details-card';
+    details.innerHTML = `
+        <div class="product-details-name">${getProductName(product)}</div>
+        ${characteristics}
+        <div class="product-template-info">
+            <div><b>Наличие:</b> под заказ</div>
+            <div><b>Стоимость:</b> по запросу</div>
+            <div><b>Доставка:</b> Бесплатная до ТК и по Нижнему Новгороду</div>
+            <div><b>Срок поставки:</b> от 3 дней</div>
+        </div>
+        <div class="product-actions">
+            <input type="number" min="1" value="1" id="product-qty-input" style="width:120px;">
+            <button class="contact-button" data-product='${encodeURIComponent(getProductName(product))}'>В корзину</button>
+        </div>
+    `;
+    catalog.appendChild(details);
+    details.querySelector('.contact-button').addEventListener('click', function() {
+        const qty = Math.max(1, parseInt(document.getElementById('product-qty-input').value) || 1);
+        addToCart(decodeURIComponent(this.dataset.product), qty);
     });
+}
 
-    function renderAnyLevel(data, path = []) {
-        let node = data;
-        for (const key of path) {
-            node = node[key];
-        }
-
-        // Если node — массив товаров, и выбран только один товар
-        if (Array.isArray(node) && node.length === 1) {
-            renderProductDetails(node[0]);
-            return;
-        }
-
-        // Если node — объект товара
-        if (isProduct(node)) {
-            renderProductDetails(node);
-            return;
-        }
-
-        catalog.innerHTML = '';
-        catalog.appendChild(renderBreadcrumbs(path));
-
-        let current = data;
-        for (const key of path) {
-            current = current[key];
-        }
-
-        // Если это массив товаров
-        if (Array.isArray(current)) {
-            if (current.length === 0) {
-                catalog.innerHTML += '<p>В этой категории пока нет товаров</p>';
-                return;
-            }
-            const productGrid = document.createElement('div');
-            productGrid.className = 'product-grid';
-            current.forEach(product => {
-                const productTile = document.createElement('div');
-                productTile.className = 'product-tile';
-                // Используем h3 для товара
-                productTile.innerHTML = `<h3>${getProductName(product)}</h3>`;
-                productTile.addEventListener('click', () => {
-                    renderProductDetails(product, path);
-                });
-                productGrid.appendChild(productTile);
-            });
-            catalog.appendChild(productGrid);
-            return;
-        }
-
-        // Если это объект с подкатегориями
-        const keys = Object.keys(current);
-        if (keys.length === 0) {
-            catalog.innerHTML += '<p>В этой категории пока нет подкатегорий</p>';
-            return;
-        }
-        const subCategoryGrid = document.createElement('div');
-        subCategoryGrid.className = 'category-grid';
-        for (const key of keys) {
-            const subCategoryTile = document.createElement('div');
-            subCategoryTile.className = 'category-tile';
-            // Используем h2 для категории
-            const imgName = key.replace(/\s+/g, '_').toLowerCase();
-            const imgPath = `img/${imgName}.jpg`;
-            subCategoryTile.innerHTML = `<img src="${imgPath}" alt="${key}" onerror="this.style.display='none'"><h2>${key}</h2>`;
-            subCategoryTile.addEventListener('click', () => {
-                renderAnyLevel(fullData, [...path, key]);
-            });
-            subCategoryGrid.appendChild(subCategoryTile);
-        }
-        catalog.appendChild(subCategoryGrid);
+// --- Для массивов делаем красивый список ---
+function renderArray(arr) {
+    if (Array.isArray(arr)) {
+        return '<ul class="char-list">' + arr.map(v => `<li>${v}</li>`).join('') + '</ul>';
     }
+    if (typeof arr === 'string' && arr.includes(',')) {
+        return '<ul class="char-list">' + arr.split(',').map(v => `<li>${v.trim()}</li>`).join('') + '</ul>';
+    }
+    return arr || '';
+}
 
-    function renderProductDetails(product, path) {
-        catalog.innerHTML = '';
-        catalog.appendChild(renderBreadcrumbs(path));
-
-        // Характеристики
-        let characteristics = '';
-        if (
-            product.Описание || product.description ||
-            product.Материал || product.material ||
-            product.Диаметр || product.diameter ||
-            product.Длина || product.length
-        ) {
-            characteristics = `<div class="product-characteristics">
-                <b>Характеристики:</b>
-                <ul>
-                    ${product.Описание || product.description ? `<li>${product.Описание || product.description}</li>` : ''}
-                    ${product.Материал || product.material ? `<li>Материал: ${product.Материал || product.material}</li>` : ''}
-                    ${product.Диаметр || product.diameter ? `<li>Диаметр:${renderArray(product.Диаметр || product.diameter)}</li>` : ''}
-                    ${product.Длина || product.length ? `<li>Длина:${renderArray(product.Длина || product.length)}</li>` : ''}
-                </ul>
-            </div>`;
-        }
-
-        // Карточка товара
-        const details = document.createElement('div');
-        details.className = 'product-details-card';
-        details.innerHTML = `
-            <div class="product-details-name">${getProductName(product)}</div>
-            ${characteristics}
-            <div class="product-template-info">
-                <div><b>Наличие:</b> под заказ</div>
-                <div><b>Стоимость:</b> по запросу</div>
-                <div><b>Доставка:</b> Бесплатная до ТК и по Нижнему Новгороду</div>
-                <div><b>Срок поставки:</b> от 3 дней</div>
-            </div>
-            <div class="product-actions">
-                <input type="number" min="1" value="1" id="product-qty-input" style="width:60px;">
-                <button class="contact-button" data-product='${encodeURIComponent(getProductName(product))}'>В корзину</button>
-            </div>
-        `;
-        catalog.appendChild(details);
-        details.querySelector('.contact-button').addEventListener('click', function() {
-            const qty = Math.max(1, parseInt(document.getElementById('product-qty-input').value) || 1);
-            addToCart(decodeURIComponent(this.dataset.product), qty);
+// --- Хлебные крошки с правильными переходами ---
+function renderBreadcrumbs(path = []) {
+    const breadcrumbs = document.createElement('div');
+    breadcrumbs.className = 'breadcrumbs';
+    let html = `<span class="breadcrumb-link" data-idx="-1">Каталог</span>`;
+    if (path.length > 0) {
+        html += ' > ' + path.map((name, idx) =>
+            `<span class="breadcrumb-link" data-idx="${idx}">${name}</span>`
+        ).join(' > ');
+    }
+    breadcrumbs.innerHTML = html;
+    breadcrumbs.querySelector('.breadcrumb-link[data-idx="-1"]').addEventListener('click', () => {
+        renderAnyLevel(fullData, [], true);
+    });
+    breadcrumbs.querySelectorAll('.breadcrumb-link[data-idx]:not([data-idx="-1"])').forEach(link => {
+        link.addEventListener('click', (e) => {
+            const idx = +e.target.dataset.idx;
+            renderAnyLevel(fullData, path.slice(0, idx + 1), true);
         });
-    }
+    });
+    return breadcrumbs;
+}
 
-    // Для массивов делаем красивый список
-    function renderArray(arr) {
-        if (Array.isArray(arr)) {
-            return '<ul class="char-list">' + arr.map(v => `<li>${v}</li>`).join('') + '</ul>';
-        }
-        // Если строка с запятыми — разбить
-        if (typeof arr === 'string' && arr.includes(',')) {
-            return '<ul class="char-list">' + arr.split(',').map(v => `<li>${v.trim()}</li>`).join('') + '</ul>';
-        }
-        return arr || '';
-    }
-
-    function renderBreadcrumbs(path = []) {
-        const breadcrumbs = document.createElement('div');
-        breadcrumbs.className = 'breadcrumbs';
-        // Кнопка "Каталог" всегда первая
-        let html = `<span class="breadcrumb-link" data-idx="-1">Каталог</span>`;
-        if (path.length > 0) {
-            html += ' > ' + path.map((name, idx) =>
-                `<span class="breadcrumb-link" data-idx="${idx}">${name}</span>`
-            ).join(' > ');
-        }
-        breadcrumbs.innerHTML = html;
-        // Обработчик для "Каталог"
-        breadcrumbs.querySelector('.breadcrumb-link[data-idx="-1"]').addEventListener('click', () => {
-            renderAnyLevel(fullData, []);
-        });
-        // Обработчики для остальных крошек
-        breadcrumbs.querySelectorAll('.breadcrumb-link[data-idx]:not([data-idx="-1"])').forEach(link => {
-            link.addEventListener('click', (e) => {
-                const idx = +e.target.dataset.idx;
-                renderAnyLevel(fullData, path.slice(0, idx + 1));
-            });
-        });
-        return breadcrumbs;
-    }
-
-    // Показываем иконку корзины при загрузке
-    renderCartIcon();
-
-    renderAnyLevel(fullData);
-});
-
+// --- Проверка, является ли объект товаром ---
 function isProduct(node) {
-    // Например, если у товара всегда есть поле "name" или "название"
     return node && typeof node === 'object' && ('name' in node || 'название' in node);
 }
 
-// Открытие/закрытие модального окна
-document.getElementById('close-callback-modal').onclick = function() {
-    document.getElementById('callback-modal').style.display = 'none';
-    document.getElementById('callback-form').reset();
-    document.getElementById('callback-success').style.display = 'none';
-};
-window.onclick = function(event) {
-    if (event.target === document.getElementById('callback-modal')) {
-        document.getElementById('callback-modal').style.display = 'none';
-        document.getElementById('callback-form').reset();
-        document.getElementById('callback-success').style.display = 'none';
-    }
-};
-
-// Отправка формы
-document.getElementById('callback-form').onsubmit = function(e) {
-    e.preventDefault();
-    const now = Date.now();
-    const last = +localStorage.getItem('callback_last') || 0;
-    if (now - last < 180000) { // 3 минуты = 180000 мс
-        alert('Пожалуйста, подождите 3 минуты перед повторной отправкой.');
+// --- SPA: обработка истории и загрузки ---
+window.addEventListener('popstate', function(event) {
+    handleUrl();
+});
+function handleUrl() {
+    const pathname = window.location.pathname;
+    if (pathname === '/' || pathname === '/index.html') {
+        renderAnyLevel(fullData, []);
         return;
     }
-    localStorage.setItem('callback_last', now);
-
-    const btn = this.querySelector('button[type="submit"]');
-    btn.disabled = true;
-    btn.textContent = 'Отправка...';
-
-    const formData = new FormData(this);
-    fetch('/api/callback', {
-        method: 'POST',
-        body: JSON.stringify({
-            company: formData.get('company'),
-            name: formData.get('name'),
-            phone: formData.get('phone'),
-            email: formData.get('email'),
-            comment: formData.get('comment')
-        }),
-        headers: {'Content-Type': 'application/json'}
-    }).then(res => res.json())
-      .then(data => {
-        btn.disabled = false;
-        btn.textContent = 'Отправить';
-        if (data.status === 'ok') {
-            document.getElementById('callback-success').innerHTML =
-                'Ваша заявка отправлена! Мы свяжемся с вами в течение суток.';
-            document.getElementById('callback-success').style.display = 'block';
-            this.reset();
-        } else {
-            alert('Ошибка отправки: ' + (data.message || ''));
+    if (pathname.startsWith('/category/')) {
+        const slug = pathname.replace('/category/', '');
+        const path = slugToPath(slug);
+        renderAnyLevel(fullData, path);
+        return;
+    }
+    if (pathname.startsWith('/product/')) {
+        const slug = pathname.replace('/product/', '');
+        const path = slugToPath(slug);
+        const productName = path[path.length - 1];
+        const catPath = path.slice(0, -1);
+        let node = fullData;
+        for (const key of catPath) {
+            node = node[key];
         }
-      })
-      .catch(() => {
-        btn.disabled = false;
-        btn.textContent = 'Отправить';
-        alert('Ошибка соединения с сервером!');
-      });
-};
+        let product = null;
+        if (Array.isArray(node)) {
+            product = node.find(p => getProductName(p).toLowerCase() === productName.toLowerCase());
+        }
+        if (product) {
+            renderProductDetails(product, catPath);
+        } else {
+            document.getElementById('catalog').innerHTML = '<p>Товар не найден</p>';
+        }
+        return;
+    }
+    renderAnyLevel(fullData, []);
+}
 
-document.getElementById('callback-link').onclick = function(e) {
-    e.preventDefault();
-    document.getElementById('callback-modal').style.display = 'block';
-};
+// --- Загрузка каталога и старт ---
+document.addEventListener('DOMContentLoaded', async () => {
+    fullData = await fetchCatalog();
+    renderCartIcon();
+    handleUrl();
+});
